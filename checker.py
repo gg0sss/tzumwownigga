@@ -13,6 +13,21 @@ CHAT_ID = os.environ["CHAT_ID"]
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 DB_FILE = "products.json"
 
+# Бренды для отслеживания
+BRANDS_TO_TRACK = [
+    "Celine",
+    "Chanel", 
+    "Dior", 
+    "Goyard", 
+    "Gucci", 
+    "Hermes", 
+    "Loewe", 
+    "Loro Piana", 
+    "Miu Miu", 
+    "Prada", 
+    "The Row"
+]
+
 # Категории для отслеживания
 CATEGORIES = [
     # Женские сумки
@@ -42,17 +57,29 @@ def check_product_page(driver, url):
         driver.get(url)
         time.sleep(3)
         
-        page_text = driver.page_source.lower()
+        # Ищем по CSS классам
+        try:
+            # Проверяем "Нет в наличии" (класс noExists)
+            driver.find_element(By.CSS_SELECTOR, "p[class*='noExists']")
+            print(f"  ✓ Найден класс 'noExists' - НЕТ В НАЛИЧИИ (ПРОДАНО)")
+            return "sold"
+        except:
+            pass
         
-        # Проверяем статус
-        if "нет в наличии" in page_text:
-            return "sold"  # Продано
-        elif "в резерве" in page_text:
-            return "reserved"  # В резерве
-        else:
-            return "available"  # В наличии
+        try:
+            # Проверяем "В резерве" (класс reserved)
+            driver.find_element(By.CSS_SELECTOR, "p[class*='reserved']")
+            print(f"  ✓ Найден класс 'reserved' - В РЕЗЕРВЕ (игнорируем)")
+            return "reserved"
+        except:
+            pass
+        
+        # Если ничего не нашли - товар доступен
+        print(f"  ✓ Статус не найден - товар доступен")
+        return "available"
+        
     except Exception as e:
-        print(f"Ошибка проверки {url}: {e}")
+        print(f"  ✗ Ошибка проверки {url}: {e}")
         return "unknown"
 
 # Загружаем старую базу
@@ -122,9 +149,13 @@ try:
                 except:
                     brand_name = "Товар"
                 
+                # Фильтруем по брендам
+                if brand_name not in BRANDS_TO_TRACK:
+                    continue  # Пропускаем бренды не из списка
+                
                 new_products[url] = {
                     "title": brand_name,
-                    "in_stock": True  # Если товар в списке - он доступен
+                    "in_stock": True
                 }
             
             except Exception as e:
@@ -133,17 +164,23 @@ try:
     
     print(f"\n✅ Всего товаров в каталогах: {len(new_products)}")
     
-    # ТЕСТ: Проверяем несколько товаров вручную
+    # ТЕСТ: Проверяем товары с известными статусами
     test_urls = [
-        "https://collect.tsum.ru/item/ITEM375877",  # "Нет в наличии"
-        "https://collect.tsum.ru/item/ITEM322717"   # "В резерве"
+        ("https://collect.tsum.ru/item/ITEM375877", "должен быть: sold (Нет в наличии)"),
+        ("https://collect.tsum.ru/item/ITEM322717", "должен быть: reserved (В резерве)")
     ]
     
-    print("\n🧪 ТЕСТ: Проверяю статусы товаров...")
-    for test_url in test_urls:
+    print("\n🧪 ТЕСТ: Проверяю различие статусов...")
+    for test_url, expected in test_urls:
+        print(f"\n{test_url} ({expected})")
         status = check_product_page(driver, test_url)
-        print(f"  {test_url} → {status}")
-        send(f"🧪 ТЕСТ\n\nURL: {test_url}\nСтатус: {status}")
+        result_emoji = "✅" if (
+            ("sold" in expected and status == "sold") or 
+            ("reserved" in expected and status == "reserved")
+        ) else "❌"
+        
+        print(f"  Результат: {status} {result_emoji}")
+        send(f"🧪 ТЕСТ\n\n{test_url}\n\nОжидается: {expected}\nПолучено: {status} {result_emoji}")
     
     # Проверяем какие товары пропали
     sold_count = 0
@@ -154,12 +191,12 @@ try:
             status = check_product_page(driver, old_url)
             
             if status == "sold":
-                # РЕАЛЬНО ПРОДАН!
+                # НЕТ В НАЛИЧИИ - УВЕДОМЛЯЕМ!
                 send(f"❌ ПРОДАНО\n\n{old_data['title']}\n\n{old_url}")
                 sold_count += 1
-                print(f"  ✅ ПРОДАНО: {old_data['title']}")
+                print(f"  ✅ НЕТ В НАЛИЧИИ: {old_data['title']}")
             elif status == "reserved":
-                print(f"  ⏳ В резерве (пропускаем)")
+                print(f"  ⏳ В резерве (пропускаем, не уведомляем)")
             else:
                 print(f"  ❓ Статус неизвестен")
     
