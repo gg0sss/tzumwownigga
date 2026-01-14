@@ -133,6 +133,18 @@ try:
     
     print(f"\n✅ Всего товаров в каталогах: {len(new_products)}")
     
+    # ТЕСТ: Проверяем несколько товаров вручную
+    test_urls = [
+        "https://collect.tsum.ru/item/ITEM375877",  # "Нет в наличии"
+        "https://collect.tsum.ru/item/ITEM322717"   # "В резерве"
+    ]
+    
+    print("\n🧪 ТЕСТ: Проверяю статусы товаров...")
+    for test_url in test_urls:
+        status = check_product_page(driver, test_url)
+        print(f"  {test_url} → {status}")
+        send(f"🧪 ТЕСТ\n\nURL: {test_url}\nСтатус: {status}")
+    
     # Проверяем какие товары пропали
     sold_count = 0
     for old_url, old_data in old_products.items():
