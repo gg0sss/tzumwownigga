@@ -25,7 +25,13 @@ CATEGORIES = [
 
 def send(msg):
     try:
+        # Первый аккаунт
         requests.post(f"{TG_API}/sendMessage", json={"chat_id": CHAT_ID, "text": msg})
+        
+        # Второй аккаунт
+        chat_id_2 = os.environ.get("CHAT_ID_2")
+        if chat_id_2:
+            requests.post(f"{TG_API}/sendMessage", json={"chat_id": chat_id_2, "text": msg})
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
