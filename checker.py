@@ -74,7 +74,7 @@ chrome_options.add_argument("--window-size=1920,1080")
 chrome_options.add_argument("user-agent=Mozilla/5.0")
 
 try:
-    send("🤖 Начинаю проверку...")
+    send("Ищу дорогую ненужную хуйню🥶")
     driver = webdriver.Chrome(options=chrome_options)
     
     for category_url in CATEGORIES:
@@ -145,7 +145,7 @@ try:
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(new_products, f, ensure_ascii=False, indent=2)
     
-    send(f"✅ Проверка завершена\nТоваров: {len(new_products)}\nПродано: {sold_count}")
+    send(f"✅ Нашел дэм🫨\nТоваров: {len(new_products)}\nПродано: {sold_count}")
 
 except Exception as e:
     send(f"⚠️ Ошибка: {str(e)}")
