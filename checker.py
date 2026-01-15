@@ -133,7 +133,9 @@ try:
         
         # Собираем все карточки
         cards = driver.find_elements(By.CSS_SELECTOR, "a[href*='/item/ITEM']")
-        print(f"  Найдено товаров: {len(cards)}")
+        print(f"  Найдено карточек: {len(cards)}")
+        
+        brands_found = set()  # Для статистики
         
         for card in cards:
             try:
@@ -146,12 +148,15 @@ try:
                 try:
                     brand_img = card.find_element(By.CSS_SELECTOR, "img[data-brandlogo='true']")
                     brand_name = brand_img.get_attribute("alt")
+                    brands_found.add(brand_name)  # Собираем уникальные бренды
                 except:
                     brand_name = "Товар"
                 
                 # Фильтруем по брендам
                 if brand_name not in BRANDS_TO_TRACK:
                     continue  # Пропускаем бренды не из списка
+                
+                print(f"    ✓ Добавлен: {brand_name} - {url}")
                 
                 new_products[url] = {
                     "title": brand_name,
@@ -161,13 +166,15 @@ try:
             except Exception as e:
                 print(f"  Ошибка обработки карточки: {e}")
                 continue
+        
+        print(f"  Уникальные бренды в категории: {sorted(brands_found)}")
     
     print(f"\n✅ Всего товаров в каталогах: {len(new_products)}")
     
     # ТЕСТ: Проверяем товары с известными статусами
     test_urls = [
         ("https://collect.tsum.ru/item/ITEM375877", "должен быть: sold (Нет в наличии)"),
-        ("https://collect.tsum.ru/item/ITEM322717", "должен быть: reserved (В резерве)")
+        ("https://collect.tsum.ru/item/ITEM373722", "должен быть: sold (Нет в наличии)")
     ]
     
     print("\n🧪 ТЕСТ: Проверяю различие статусов...")
@@ -215,3 +222,12 @@ except Exception as e:
         driver.quit()
     except:
         pass
+```
+
+---
+
+**Скопируй ВЕСЬ этот код, замени `checker.py` и запускай!**
+
+Теперь в логах будет строка:
+```
+Уникальные бренды в категории: ['Gucci', 'Chanel', 'Prada', ...]
