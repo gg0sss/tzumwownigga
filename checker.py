@@ -61,7 +61,7 @@ def check_product_page(driver, url):
         try:
             # Проверяем "Нет в наличии" (класс noExists)
             driver.find_element(By.CSS_SELECTOR, "p[class*='noExists']")
-            print(f"  ✓ Найден класс 'noExists' - НЕТ В НАЛИЧИИ (ПРОДАНО)")
+            print(f"  ✓ Найден класс 'noExists' - ПРОДАНО")
             return "sold"
         except:
             pass
@@ -69,7 +69,7 @@ def check_product_page(driver, url):
         try:
             # Проверяем "В резерве" (класс reserved)
             driver.find_element(By.CSS_SELECTOR, "p[class*='reserved']")
-            print(f"  ✓ Найден класс 'reserved' - В РЕЗЕРВЕ (игнорируем)")
+            print(f"  ✓ Найден класс 'reserved' - В РЕЗЕРВЕ")
             return "reserved"
         except:
             pass
@@ -167,7 +167,7 @@ try:
                 print(f"  Ошибка обработки карточки: {e}")
                 continue
         
-        print(f"  Уникальные бренды в категории: {sorted(brands_found)}")
+        print(f"  Уникальные бренды найдены: {sorted(brands_found)}")
     
     print(f"\n✅ Всего товаров в каталогах: {len(new_products)}")
     
@@ -198,12 +198,12 @@ try:
             status = check_product_page(driver, old_url)
             
             if status == "sold":
-                # НЕТ В НАЛИЧИИ - УВЕДОМЛЯЕМ!
+                # РЕАЛЬНО ПРОДАН!
                 send(f"❌ ПРОДАНО\n\n{old_data['title']}\n\n{old_url}")
                 sold_count += 1
-                print(f"  ✅ НЕТ В НАЛИЧИИ: {old_data['title']}")
+                print(f"  ✅ ПРОДАНО: {old_data['title']}")
             elif status == "reserved":
-                print(f"  ⏳ В резерве (пропускаем, не уведомляем)")
+                print(f"  ⏳ В резерве (пропускаем)")
             else:
                 print(f"  ❓ Статус неизвестен")
     
