@@ -103,7 +103,18 @@ try:
                 except:
                     brand_name = "Товар"
                 
-                new_products[url] = {"title": brand_name, "in_stock": True}
+                # Достаём цену
+                try:
+                    price_elem = card.find_element(By.CSS_SELECTOR, "span[class*='price']")
+                    price_text = price_elem.text.strip()
+                except:
+                    price_text = "Цена неизвестна"
+                
+                new_products[url] = {
+                    "title": brand_name,
+                    "price": price_text,
+                    "in_stock": True
+                }
             except Exception as e:
                 continue
     
@@ -116,9 +127,10 @@ try:
             status = check_product_page(driver, old_url)
             
             if status == "sold":
-                send(f"❌ ПРОДАНО\n\n{old_data['title']}\n\n{old_url}")
+                price_info = old_data.get('price', 'Цена неизвестна')
+                send(f"❌ ПРОДАНО\n\n{old_data['title']}\nЦена: {price_info}\n\n{old_url}")
                 sold_count += 1
-                print(f"  ✅ ПРОДАНО: {old_data['title']}")
+                print(f"  ✅ ПРОДАНО: {old_data['title']} за {price_info}")
             elif status == "reserved":
                 print(f"  В резерве - игнорируем")
     
