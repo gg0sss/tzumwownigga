@@ -13,76 +13,44 @@ CHAT_ID = os.environ["CHAT_ID"]
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 DB_FILE = "products.json"
 
-# Бренды для отслеживания
-BRANDS_TO_TRACK = [
-    "Celine",
-    "Chanel", 
-    "Dior", 
-    "Goyard", 
-    "Gucci", 
-    "Hermes", 
-    "Loewe", 
-    "Loro Piana", 
-    "Miu Miu", 
-    "Prada", 
-    "The Row"
-]
-
-# Категории для отслеживания
 CATEGORIES = [
-    # Женские сумки
     "https://collect.tsum.ru/women/catalog/povsednevnye-sumki-82",
     "https://collect.tsum.ru/women/catalog/riukzaki-i-poiasnye-sumki-87",
     "https://collect.tsum.ru/women/catalog/dorozhnye-i-sportivnye-sumki-93",
     "https://collect.tsum.ru/women/catalog/klatchi-i-vechernie-sumki-90",
-    # Мужские сумки
     "https://collect.tsum.ru/men/catalog/riukzaki-i-poiasnye-sumki-246",
     "https://collect.tsum.ru/men/catalog/povsednevnye-sumki-238",
     "https://collect.tsum.ru/men/catalog/dorozhnye-i-sportivnye-sumki-249"
 ]
 
 def send(msg):
-    """Отправить сообщение в Telegram"""
     try:
-        requests.post(
-            f"{TG_API}/sendMessage",
-            json={"chat_id": CHAT_ID, "text": msg}
-        )
+        requests.post(f"{TG_API}/sendMessage", json={"chat_id": CHAT_ID, "text": msg})
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
 def check_product_page(driver, url):
-    """Проверить страницу товара - продан или в резерве"""
     try:
         driver.get(url)
         time.sleep(3)
         
-        # Ищем по CSS классам
         try:
-            # Проверяем "Нет в наличии" (класс noExists)
             driver.find_element(By.CSS_SELECTOR, "p[class*='noExists']")
-            print(f"  ✓ Найден класс 'noExists' - ПРОДАНО")
             return "sold"
         except:
             pass
         
         try:
-            # Проверяем "В резерве" (класс reserved)
             driver.find_element(By.CSS_SELECTOR, "p[class*='reserved']")
-            print(f"  ✓ Найден класс 'reserved' - В РЕЗЕРВЕ")
             return "reserved"
         except:
             pass
         
-        # Если ничего не нашли - товар доступен
-        print(f"  ✓ Статус не найден - товар доступен")
         return "available"
-        
     except Exception as e:
-        print(f"  ✗ Ошибка проверки {url}: {e}")
+        print(f"Ошибка проверки {url}: {e}")
         return "unknown"
 
-# Загружаем старую базу
 if os.path.exists(DB_FILE):
     with open(DB_FILE, "r", encoding="utf-8") as f:
         old_products = json.load(f)
@@ -91,132 +59,78 @@ else:
 
 new_products = {}
 
-# Настройка Chrome
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+chrome_options.add_argument("user-agent=Mozilla/5.0")
 
 try:
     send("🤖 Начинаю проверку...")
-    
     driver = webdriver.Chrome(options=chrome_options)
     
-    # Парсим категории
     for category_url in CATEGORIES:
         print(f"\nПарсинг: {category_url}")
         driver.get(category_url)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/item/ITEM']")))
         
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/item/ITEM']"))
-        )
-        
-        # Кликаем "Показать больше" до конца
         attempts = 0
-        max_attempts = 200
-        
-        while attempts < max_attempts:
+        while attempts < 200:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
-            
             try:
                 button = driver.find_element(By.XPATH, "//p[contains(text(), 'Показать больше товаров')]")
                 driver.execute_script("arguments[0].click();", button)
                 time.sleep(3)
             except:
                 break
-            
             attempts += 1
         
-        # Собираем все карточки
         cards = driver.find_elements(By.CSS_SELECTOR, "a[href*='/item/ITEM']")
-        print(f"  Найдено карточек: {len(cards)}")
-        
-        brands_found = set()  # Для статистики
+        print(f"  Найдено: {len(cards)} товаров")
         
         for card in cards:
             try:
                 url = card.get_attribute("href")
-                
                 if url in new_products:
                     continue
                 
-                # Достаём бренд
                 try:
                     brand_img = card.find_element(By.CSS_SELECTOR, "img[data-brandlogo='true']")
-                    brand_name = brand_img.get_attribute("alt")
-                    brands_found.add(brand_name)  # Собираем уникальные бренды
+                    brand_name = brand_img.get_attribute("alt") or "Товар"
                 except:
                     brand_name = "Товар"
                 
-                # Фильтруем по брендам
-                if brand_name not in BRANDS_TO_TRACK:
-                    continue  # Пропускаем бренды не из списка
-                
-                print(f"    ✓ Добавлен: {brand_name} - {url}")
-                
-                new_products[url] = {
-                    "title": brand_name,
-                    "in_stock": True
-                }
-            
+                new_products[url] = {"title": brand_name, "in_stock": True}
             except Exception as e:
-                print(f"  Ошибка обработки карточки: {e}")
                 continue
-        
-        print(f"  Уникальные бренды найдены: {sorted(brands_found)}")
     
-    print(f"\n✅ Всего товаров в каталогах: {len(new_products)}")
+    print(f"\n✅ Всего товаров: {len(new_products)}")
     
-    # ТЕСТ: Проверяем товары с известными статусами
-    test_urls = [
-        ("https://collect.tsum.ru/item/ITEM375877", "должен быть: sold (Нет в наличии)"),
-        ("https://collect.tsum.ru/item/ITEM373722", "должен быть: sold (Нет в наличии)")
-    ]
-    
-    print("\n🧪 ТЕСТ: Проверяю различие статусов...")
-    for test_url, expected in test_urls:
-        print(f"\n{test_url} ({expected})")
-        status = check_product_page(driver, test_url)
-        result_emoji = "✅" if (
-            ("sold" in expected and status == "sold") or 
-            ("reserved" in expected and status == "reserved")
-        ) else "❌"
-        
-        print(f"  Результат: {status} {result_emoji}")
-        send(f"🧪 ТЕСТ\n\n{test_url}\n\nОжидается: {expected}\nПолучено: {status} {result_emoji}")
-    
-    # Проверяем какие товары пропали
     sold_count = 0
     for old_url, old_data in old_products.items():
         if old_data["in_stock"] and old_url not in new_products:
-            # Товар пропал из списка - проверяем его страницу
-            print(f"\n🔍 Проверяю: {old_url}")
+            print(f"Проверяю: {old_url}")
             status = check_product_page(driver, old_url)
             
             if status == "sold":
-                # РЕАЛЬНО ПРОДАН!
                 send(f"❌ ПРОДАНО\n\n{old_data['title']}\n\n{old_url}")
                 sold_count += 1
                 print(f"  ✅ ПРОДАНО: {old_data['title']}")
             elif status == "reserved":
-                print(f"  ⏳ В резерве (пропускаем)")
-            else:
-                print(f"  ❓ Статус неизвестен")
+                print(f"  В резерве - игнорируем")
     
     driver.quit()
     
-    # Сохраняем новую базу
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(new_products, f, ensure_ascii=False, indent=2)
     
-    send(f"✅ Проверка завершена\n\nОтслеживается: {len(new_products)} товаров\nПродано: {sold_count}")
+    send(f"✅ Проверка завершена\nТоваров: {len(new_products)}\nПродано: {sold_count}")
 
 except Exception as e:
-    send(f"⚠️ Ошибка:\n{str(e)}")
+    send(f"⚠️ Ошибка: {str(e)}")
     print(f"ERROR: {e}")
     try:
         driver.quit()
