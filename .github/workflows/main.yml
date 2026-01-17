@@ -39,10 +39,12 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}
       
       - name: Save database
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add products.json sales_history.xlsx
+          git add products.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update database" && git push)
