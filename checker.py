@@ -17,13 +17,32 @@ TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 DB_FILE = "products.json"
 
 CATEGORIES = [
+    # Женские сумки
     "https://collect.tsum.ru/women/catalog/povsednevnye-sumki-82",
     "https://collect.tsum.ru/women/catalog/riukzaki-i-poiasnye-sumki-87",
     "https://collect.tsum.ru/women/catalog/dorozhnye-i-sportivnye-sumki-93",
     "https://collect.tsum.ru/women/catalog/klatchi-i-vechernie-sumki-90",
+    
+    # Женские аксессуары
+    "https://collect.tsum.ru/women/catalog/ochki-306",
+    "https://collect.tsum.ru/women/catalog/remni-284",
+    "https://collect.tsum.ru/women/catalog/koshelki-i-kartkholdery-299",
+    "https://collect.tsum.ru/women/catalog/oblozhki-i-futliary-294",
+    "https://collect.tsum.ru/women/catalog/aksessuary-dlia-sumok-367",
+    
+    # Мужские сумки
     "https://collect.tsum.ru/men/catalog/riukzaki-i-poiasnye-sumki-246",
     "https://collect.tsum.ru/men/catalog/povsednevnye-sumki-238",
-    "https://collect.tsum.ru/men/catalog/dorozhnye-i-sportivnye-sumki-249"
+    "https://collect.tsum.ru/men/catalog/dorozhnye-i-sportivnye-sumki-249",
+    
+    # Мужские аксессуары
+    "https://collect.tsum.ru/men/catalog/sharfy-i-platki-353",
+    "https://collect.tsum.ru/men/catalog/ukrasheniia-347",
+    "https://collect.tsum.ru/men/catalog/remni-323",
+    "https://collect.tsum.ru/men/catalog/oblozhki-i-futliary-332",
+    "https://collect.tsum.ru/men/catalog/ochki-344",
+    "https://collect.tsum.ru/men/catalog/koshelki-i-kartkholdery-337",
+    "https://collect.tsum.ru/men/catalog/golovnye-ubory-326"
 ]
 
 def send(msg):
