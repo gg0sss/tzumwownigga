@@ -42,9 +42,10 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SHEET_ID: ${{ secrets.SHEET_ID }}
       
-      - name: Save database
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add products.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update database" && git push)
+     - name: Save database
+  run: |
+    git config user.name "GitHub Actions"
+    git config user.email "actions@github.com"
+    git pull --rebase
+    git add products.json
+    git diff --quiet && git diff --staged --quiet || (git commit -m "Update database" && git push)
