@@ -8,13 +8,13 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from openpyxl import Workbook, load_workbook
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 DB_FILE = "products.json"
-EXCEL_FILE = "sales_history.xlsx"
 
 CATEGORIES = [
     "https://collect.tsum.ru/women/catalog/povsednevnye-sumki-82",
@@ -36,29 +36,31 @@ def send(msg):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
-def init_excel():
-    """Создаёт Excel файл если его нет"""
-    if not os.path.exists(EXCEL_FILE):
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "История продаж"
-        ws.append(["Дата продажи", "Бренд", "Цена", "Месяц выставления", "Ссылка"])
-        wb.save(EXCEL_FILE)
-        print("✅ Создан файл sales_history.xlsx")
-
-def add_to_excel(brand, price, listing_date, url):
-    """Добавляет проданный товар в Excel"""
+def init_google_sheets():
+    """Подключение к Google Sheets"""
     try:
-        wb = load_workbook(EXCEL_FILE)
-        ws = wb.active
+        creds_json = os.environ["GOOGLE_CREDENTIALS"]
+        sheet_id = os.environ["SHEET_ID"]
         
-        sale_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        ws.append([sale_date, brand, price, listing_date, url])
+        creds_dict = json.loads(creds_json)
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        client = gspread.authorize(creds)
         
-        wb.save(EXCEL_FILE)
-        print(f"  📊 Добавлено в Excel")
+        sheet = client.open_by_key(sheet_id).sheet1
+        return sheet
     except Exception as e:
-        print(f"Ошибка записи в Excel: {e}")
+        print(f"Ошибка подключения к Google Sheets: {e}")
+        return None
+
+def add_to_google_sheets(sheet, brand, price, listing_date, url):
+    """Добавляет проданный товар в Google Sheets"""
+    try:
+        sale_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sheet.append_row([sale_date, brand, price, listing_date, url])
+        print(f"  📊 Добавлено в Google Sheets")
+    except Exception as e:
+        print(f"Ошибка записи в Google Sheets: {e}")
 
 def estimate_listing_date(item_url):
     """Определяет примерный месяц размещения по номеру ITEM"""
@@ -101,8 +103,8 @@ def check_product_page(driver, url):
         print(f"Ошибка проверки {url}: {e}")
         return "unknown"
 
-# Инициализируем Excel
-init_excel()
+# Подключаемся к Google Sheets
+google_sheet = init_google_sheets()
 
 if os.path.exists(DB_FILE):
     with open(DB_FILE, "r", encoding="utf-8") as f:
@@ -182,8 +184,9 @@ try:
                 price_info = old_data.get('price', 'Цена неизвестна')
                 listing_date = estimate_listing_date(old_url)
                 
-                # Добавляем в Excel
-                add_to_excel(old_data['title'], price_info, listing_date, old_url)
+                # Добавляем в Google Sheets
+                if google_sheet:
+                    add_to_google_sheets(google_sheet, old_data['title'], price_info, listing_date, old_url)
                 
                 send(f"❌ ПРОДАНО\n\n{old_data['title']}\nЦена: {price_info}\nВыставлено: {listing_date}\n\n{old_url}")
                 sold_count += 1
