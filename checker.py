@@ -35,6 +35,26 @@ def send(msg):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
+def estimate_listing_date(item_url):
+    """Определяет примерный месяц размещения по номеру ITEM"""
+    try:
+        item_id = item_url.split("/item/")[1].split("/")[0]
+        num = int(item_id.replace("ITEM", ""))
+        
+        # Диапазоны по месяцам
+        if num >= 378324: return "декабрь 2025"
+        elif num >= 375363: return "ноябрь 2025"
+        elif num >= 374536: return "октябрь 2025"
+        elif num >= 366646: return "август 2025"
+        elif num >= 362999: return "июнь 2025"
+        elif num >= 350905: return "май 2025"
+        elif num >= 332922: return "начало 2025"
+        elif num >= 305982: return "конец 2024"
+        elif num >= 221563: return "2023-2024"
+        else: return "очень давно"
+    except:
+        return "неизвестно"
+
 def check_product_page(driver, url):
     try:
         driver.get(url)
@@ -134,9 +154,10 @@ try:
             
             if status == "sold":
                 price_info = old_data.get('price', 'Цена неизвестна')
-                send(f"❌ ПРОДАНО\n\n{old_data['title']}\nЦена: {price_info}\n\n{old_url}")
+                listing_date = estimate_listing_date(old_url)
+                send(f"❌ ПРОДАНО\n\n{old_data['title']}\nЦена: {price_info}\nВыставлено: {listing_date}\n\n{old_url}")
                 sold_count += 1
-                print(f"  ✅ ПРОДАНО: {old_data['title']} за {price_info}")
+                print(f"  ✅ ПРОДАНО: {old_data['title']} за {price_info} (выставлено: {listing_date})")
             elif status == "reserved":
                 print(f"  В резерве - игнорируем")
     
