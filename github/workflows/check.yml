@@ -26,7 +26,7 @@ jobs:
           sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
       
       - name: Install dependencies
-        run: pip install requests selenium
+        run: pip install requests selenium openpyxl
       
       - name: Run checker
         run: python checker.py
@@ -38,5 +38,5 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add products.json
+          git add products.json sales_history.xlsx
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update database" && git push)
