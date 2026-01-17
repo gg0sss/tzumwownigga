@@ -18,23 +18,15 @@ jobs:
         with:
           python-version: "3.10"
       
-      - name: Install Chrome and ChromeDriver
+      - name: Install Chrome
         run: |
-          # Устанавливаем Chrome
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
           wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
-          
-          # Удаляем старый ChromeDriver
-          sudo rm -f /usr/bin/chromedriver
-          
-          # Устанавливаем правильную версию ChromeDriver
-          wget -q https://storage.googleapis.com/chrome-for-testing-public/144.0.7559.31/linux64/chromedriver-linux64.zip
-          unzip -q chromedriver-linux64.zip
-          sudo mv chromedriver-linux64/chromedriver /usr/bin/chromedriver
-          sudo chmod +x /usr/bin/chromedriver
       
       - name: Install dependencies
-        run: pip install requests selenium
+        run: pip install requests selenium openpyxl
       
       - name: Run checker
         run: python checker.py
@@ -46,5 +38,5 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add products.json
+          git add products.json sales_history.xlsx
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update database" && git push)
