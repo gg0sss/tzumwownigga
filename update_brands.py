@@ -11,6 +11,10 @@ CHAT_ID = os.environ["CHAT_ID"]
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 DB_FILE = "products.json"
 
+# ПАРАМЕТРЫ ОБРАБОТКИ
+BATCH_SIZE = 2000  # Обрабатывать по 2000 товаров за раз
+START_INDEX = int(os.environ.get("START_INDEX", "0"))  # С какого товара начать
+
 def send(msg):
     try:
         requests.post(f"{TG_API}/sendMessage", json={"chat_id": CHAT_ID, "text": msg})
@@ -21,7 +25,7 @@ def get_brand_from_page(driver, url):
     """Достаёт бренд со страницы товара"""
     try:
         driver.get(url)
-        time.sleep(3)
+        time.sleep(2)
         
         # Пробуем найти бренд по картинке
         try:
@@ -60,13 +64,19 @@ chrome_options.add_argument("--window-size=1920,1080")
 chrome_options.add_argument("user-agent=Mozilla/5.0")
 
 try:
-    send("🔄 Начинаю обновление брендов...")
-    driver = webdriver.Chrome(options=chrome_options)
-    
     total = len(products)
+    products_list = list(products.items())
+    
+    # Определяем диапазон обработки
+    end_index = min(START_INDEX + BATCH_SIZE, total)
+    batch = products_list[START_INDEX:end_index]
+    
+    send(f"🔄 Начинаю обновление брендов\nТовары {START_INDEX+1} - {end_index} из {total}")
+    
+    driver = webdriver.Chrome(options=chrome_options)
     updated = 0
     
-    for i, (url, data) in enumerate(products.items(), 1):
+    for i, (url, data) in enumerate(batch, START_INDEX + 1):
         # Пропускаем если бренд уже есть и это не "Товар"
         if data.get("title") and data["title"] != "Товар":
             print(f"[{i}/{total}] Пропуск (бренд уже есть): {url}")
@@ -78,14 +88,12 @@ try:
         products[url]["title"] = brand_name
         updated += 1
         
-        # Сохраняем после каждого обновления
-        if updated % 10 == 0:
+        # Сохраняем каждые 50 товаров
+        if updated % 50 == 0:
             with open(DB_FILE, "w", encoding="utf-8") as f:
                 json.dump(products, f, ensure_ascii=False, indent=2)
-            print(f"  💾 Сохранено ({updated} обновлено)")
-            send(f"📊 Обновлено {updated}/{total} брендов")
-        
-        time.sleep(1)  # Небольшая пауза между запросами
+            print(f"  💾 Сохранено ({updated} обновлено в этой партии)")
+            send(f"📊 Обновлено {updated} брендов в текущей партии\nВсего обработано: {i}/{total}")
     
     driver.quit()
     
@@ -93,8 +101,14 @@ try:
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(products, f, ensure_ascii=False, indent=2)
     
-    send(f"✅ Готово! Обновлено {updated} брендов из {total} товаров")
-    print(f"\n✅ Обновление завершено: {updated} брендов")
+    # Проверяем, есть ли ещё товары для обработки
+    if end_index < total:
+        remaining = total - end_index
+        send(f"✅ Партия завершена!\nОбновлено: {updated} брендов\nОсталось товаров: {remaining}\n\n🔄 Запусти снова с START_INDEX={end_index}")
+    else:
+        send(f"🎉 ВСЁ ГОТОВО!\nВсего обновлено: {updated} брендов из {total} товаров")
+    
+    print(f"\n✅ Обработка завершена: {updated} брендов")
 
 except Exception as e:
     send(f"⚠️ Ошибка обновления брендов: {str(e)}")
