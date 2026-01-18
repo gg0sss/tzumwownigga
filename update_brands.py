@@ -25,7 +25,7 @@ def get_brand_from_page(driver, url):
     """Достаёт бренд со страницы товара"""
     try:
         driver.get(url)
-        time.sleep(2)
+        time.sleep(1)
         
         # Пробуем найти бренд по картинке
         try:
