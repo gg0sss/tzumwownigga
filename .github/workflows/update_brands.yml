@@ -2,6 +2,11 @@ name: Update Brands
 
 on:
   workflow_dispatch:
+    inputs:
+      start_index:
+        description: 'Start index (0, 2000, 4000, etc.)'
+        required: false
+        default: '0'
 
 jobs:
   run:
@@ -39,10 +44,11 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          START_INDEX: ${{ github.event.inputs.start_index }}
       
       - name: Save database
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add products.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update brands" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update brands batch" && git push)
