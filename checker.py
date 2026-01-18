@@ -171,17 +171,23 @@ try:
                 if url in new_products:
                     continue
                 
-                try:
-                    brand_img = card.find_element(By.CSS_SELECTOR, "img[data-brandlogo='true']")
-                    brand_name = brand_img.get_attribute("alt") or "Товар"
-                except:
-                    brand_name = "Товар"
-                
+                # Парсим цену (всегда заново)
                 try:
                     price_elem = card.find_element(By.CSS_SELECTOR, "span[class*='price']")
                     price_text = price_elem.text.strip()
                 except:
                     price_text = "Цена неизвестна"
+                
+                # Бренд: если товар уже в базе - берём оттуда, иначе парсим
+                if url in old_products and old_products[url].get("title") != "Товар":
+                    brand_name = old_products[url]["title"]  # БЕРЁМ ИЗ СТАРОЙ БАЗЫ
+                else:
+                    # Пробуем спарсить для нового товара
+                    try:
+                        brand_img = card.find_element(By.CSS_SELECTOR, "img[data-brandlogo='true']")
+                        brand_name = brand_img.get_attribute("alt") or "Товар"
+                    except:
+                        brand_name = "Товар"
                 
                 new_products[url] = {
                     "title": brand_name,
