@@ -173,8 +173,11 @@ try:
                 
                 # Парсим цену (всегда заново)
                 try:
+                    time.sleep(0.5)  # Ждём загрузки цены
                     price_elem = card.find_element(By.CSS_SELECTOR, "span[class*='price']")
                     price_text = price_elem.text.strip()
+                    if not price_text:  # Если пустая строка
+                        price_text = "Цена неизвестна"
                 except:
                     price_text = "Цена неизвестна"
                 
