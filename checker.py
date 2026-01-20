@@ -139,25 +139,45 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--disable-software-rasterizer")
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument("--disable-logging")
-chrome_options.add_argument("--disable-background-networking")
 chrome_options.add_argument("--window-size=1920,1080")
-chrome_options.add_argument("--single-process")
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36")
+
 try:
     send("Ищу дорогую ненужную хуйню🥶")
-    driver = webdriver.Chrome(options=chrome_options)
+    
+    # Пробуем запустить Chrome несколько раз
+    driver = None
+    for attempt in range(3):
+        try:
+            driver = webdriver.Chrome(options=chrome_options)
+            break
+        except Exception as e:
+            print(f"Попытка {attempt + 1}/3 запустить Chrome: {e}")
+            time.sleep(5)
+    
+    if not driver:
+        raise Exception("Не удалось запустить Chrome после 3 попыток")
     
     for category_url in CATEGORIES:
         print(f"\nПарсинг: {category_url}")
-        driver.get(category_url)
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/item/ITEM']")))
+        
+        try:
+            driver.get(category_url)
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/item/ITEM']")))
+        except Exception as e:
+            print(f"Ошибка загрузки категории {category_url}: {e}")
+            continue
         
         attempts = 0
         while attempts < 200:
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
+            try:
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(2)
+            except:
+                print("Ошибка прокрутки, пропускаем")
+                break
+                
             try:
                 button = driver.find_element(By.XPATH, "//p[contains(text(), 'Показать больше товаров')]")
                 driver.execute_script("arguments[0].click();", button)
@@ -175,21 +195,19 @@ try:
                 if url in new_products:
                     continue
                 
-                # Парсим цену (всегда заново)
+                # Парсим цену
                 try:
-                    time.sleep(0.5)  # Ждём загрузки цены
                     price_elem = card.find_element(By.CSS_SELECTOR, "span[class*='price']")
                     price_text = price_elem.text.strip()
-                    if not price_text:  # Если пустая строка
+                    if not price_text:
                         price_text = "Цена неизвестна"
                 except:
                     price_text = "Цена неизвестна"
                 
-                # Бренд: если товар уже в базе - берём оттуда, иначе парсим
+                # Бренд из старой базы или парсим
                 if url in old_products and old_products[url].get("title") != "Товар":
-                    brand_name = old_products[url]["title"]  # БЕРЁМ ИЗ СТАРОЙ БАЗЫ
+                    brand_name = old_products[url]["title"]
                 else:
-                    # Пробуем спарсить для нового товара
                     try:
                         brand_img = card.find_element(By.CSS_SELECTOR, "img[data-brandlogo='true']")
                         brand_name = brand_img.get_attribute("alt") or "Товар"
@@ -210,23 +228,28 @@ try:
     for old_url, old_data in old_products.items():
         if old_data["in_stock"] and old_url not in new_products:
             print(f"Проверяю: {old_url}")
-            status = check_product_page(driver, old_url)
+            
+            try:
+                status = check_product_page(driver, old_url)
+            except:
+                print(f"  ⚠️ Ошибка проверки, пропускаем")
+                continue
             
             if status == "sold":
                 price_info = old_data.get('price', 'Цена неизвестна')
                 listing_date = estimate_listing_date(old_url)
                 
-                # Добавляем в Google Sheets
                 if google_sheet:
                     add_to_google_sheets(google_sheet, old_data['title'], price_info, listing_date, old_url)
                 
                 send(f"❌ ПРОДАНО\n\n{old_data['title']}\nЦена: {price_info}\nВыставлено: {listing_date}\n\n{old_url}")
                 sold_count += 1
-                print(f"  ✅ ПРОДАНО: {old_data['title']} за {price_info} (выставлено: {listing_date})")
+                print(f"  ✅ ПРОДАНО: {old_data['title']} за {price_info}")
             elif status == "reserved":
                 print(f"  В резерве - игнорируем")
     
-    driver.quit()
+    if driver:
+        driver.quit()
     
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(new_products, f, ensure_ascii=False, indent=2)
@@ -237,6 +260,7 @@ except Exception as e:
     send(f"⚠️ Ошибка: {str(e)}")
     print(f"ERROR: {e}")
     try:
-        driver.quit()
+        if driver:
+            driver.quit()
     except:
         pass
