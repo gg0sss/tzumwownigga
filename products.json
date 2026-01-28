@@ -30069,6 +30069,11 @@
     "price": "53 900 ₽\n26 950 ₽\n -50%",
     "in_stock": true
   },
+  "https://collect.tsum.ru/item/ITEM349336": {
+    "title": "Товар",
+    "price": "63 000 ₽",
+    "in_stock": true
+  },
   "https://collect.tsum.ru/item/ITEM349294": {
     "title": "Товар",
     "price": "70 000 ₽",
@@ -30082,11 +30087,6 @@
   "https://collect.tsum.ru/item/ITEM349306": {
     "title": "Товар",
     "price": "69 950 ₽",
-    "in_stock": true
-  },
-  "https://collect.tsum.ru/item/ITEM349336": {
-    "title": "Товар",
-    "price": "63 000 ₽",
     "in_stock": true
   },
   "https://collect.tsum.ru/item/ITEM347169": {
@@ -30209,16 +30209,6 @@
     "price": "69 700 ₽",
     "in_stock": true
   },
-  "https://collect.tsum.ru/item/ITEM319882": {
-    "title": "Товар",
-    "price": "79 000 ₽",
-    "in_stock": true
-  },
-  "https://collect.tsum.ru/item/ITEM319893": {
-    "title": "Товар",
-    "price": "85 000 ₽",
-    "in_stock": true
-  },
   "https://collect.tsum.ru/item/ITEM319856": {
     "title": "Товар",
     "price": "79 000 ₽",
@@ -30237,6 +30227,16 @@
   "https://collect.tsum.ru/item/ITEM319862": {
     "title": "Товар",
     "price": "79 000 ₽",
+    "in_stock": true
+  },
+  "https://collect.tsum.ru/item/ITEM319882": {
+    "title": "Товар",
+    "price": "79 000 ₽",
+    "in_stock": true
+  },
+  "https://collect.tsum.ru/item/ITEM319893": {
+    "title": "Товар",
+    "price": "85 000 ₽",
     "in_stock": true
   },
   "https://collect.tsum.ru/item/ITEM319833": {
@@ -30279,11 +30279,6 @@
     "price": "42 750 ₽",
     "in_stock": true
   },
-  "https://collect.tsum.ru/item/ITEM312679": {
-    "title": "Товар",
-    "price": "100 000 ₽",
-    "in_stock": true
-  },
   "https://collect.tsum.ru/item/ITEM312651": {
     "title": "Товар",
     "price": "69 950 ₽",
@@ -30295,6 +30290,11 @@
     "in_stock": true
   },
   "https://collect.tsum.ru/item/ITEM312678": {
+    "title": "Товар",
+    "price": "100 000 ₽",
+    "in_stock": true
+  },
+  "https://collect.tsum.ru/item/ITEM312679": {
     "title": "Товар",
     "price": "100 000 ₽",
     "in_stock": true
