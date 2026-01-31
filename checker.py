@@ -87,7 +87,8 @@ def estimate_listing_date(item_url):
         item_id = item_url.split("/item/")[1].split("/")[0]
         num = int(item_id.replace("ITEM", ""))
         
-        if num >= 378324: return "декабрь 2025"
+        if num >= 380446: return "январь 2026"
+        elif num >= 378324: return "декабрь 2025"
         elif num >= 375363: return "ноябрь 2025"
         elif num >= 374536: return "октябрь 2025"
         elif num >= 366646: return "август 2025"
